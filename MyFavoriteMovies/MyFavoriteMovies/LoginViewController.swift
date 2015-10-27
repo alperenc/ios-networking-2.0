@@ -343,16 +343,85 @@ class LoginViewController: UIViewController {
     
     func getUserID(session_id : String) {
         
-        print("getUserID: implement me!")
-        
         /* TASK: Get the user's ID, then store it (appDelegate.userID) for future use and go to next view! */
         /* 1. Set the parameters */
+        let methodParameters: [String: String!] = [
+            "api_key": appDelegate.apiKey,
+            "session_id": appDelegate.sessionID!
+            ]
+        
         /* 2. Build the URL */
+        let urlString = appDelegate.baseURLSecureString + "account" + appDelegate.escapedParameters(methodParameters)
+        let url = NSURL(string: urlString)!
+        
         /* 3. Configure the request */
+        let request = NSMutableURLRequest(URL: url)
+        request.addValue("application/json", forHTTPHeaderField: "Accept")
+        
         /* 4. Make the request */
-        /* 5. Parse the data */
-        /* 6. Use the data! */
+        let task = session.dataTaskWithRequest(request) { (data, response, error) -> Void in
+            
+            //Guard: Is there an error?
+            guard (error == nil) else {
+                dispatch_async(dispatch_get_main_queue()) {
+                    self.debugTextLabel.text = "Login Failed (User ID)."
+                }
+                print("There was an error with your request: \(error)")
+                return
+            }
+            
+            // Guard: do we get a successful 2XX response?
+            guard let statusCode = (response as? NSHTTPURLResponse)?.statusCode where statusCode >= 200 && statusCode <= 299 else {
+                if let response = response as? NSHTTPURLResponse {
+                    print("Your request returned an invalid response! Status code: \(response.statusCode)!")
+                } else if let response = response {
+                    print("Your request returned an invalid response! Response: \(response)!")
+                } else {
+                    print("Your request returned an invalid response!")
+                }
+                return
+            }
+            
+            // Guard: Is there any data returned?
+            guard let data = data else {
+                print("No data was returned by the request!")
+                return
+            }
+            
+            /* 5. Parse the data */
+            let parsedResult: AnyObject!
+            do {
+                parsedResult = try NSJSONSerialization.JSONObjectWithData(data, options: .AllowFragments)
+            } catch {
+                parsedResult = nil
+                print("Could not parse the data as JSON: '\(data)'")
+                return
+            }
+            
+            guard let userID = parsedResult["id"] as? Int else {
+                guard let _ = parsedResult["status_code"] as? Int else {
+                    dispatch_async(dispatch_get_main_queue()) {
+                        self.debugTextLabel.text = "Login Failed (User ID)."
+                    }
+                    print("Login failed without status message")
+                    return
+                }
+                
+                let statusMessage = parsedResult["status_message"] as? String
+                dispatch_async(dispatch_get_main_queue()) { () -> Void in
+                    self.debugTextLabel.text = statusMessage
+                }
+                print("Login failed with status message: \(statusMessage)")
+                return
+            }
+            
+            /* 6. Use the data! */
+            self.appDelegate.userID = userID
+            self.completeLogin()
+        }
+        
         /* 7. Start the request */
+        task.resume()
     }
 }
 
