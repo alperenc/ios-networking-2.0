@@ -185,9 +185,24 @@ extension TMDBClient {
     func getWatchlistMovies(completionHandler: (result: [TMDBMovie]?, error: NSError?) -> Void) {
         
         /* 1. Specify parameters, method (if has {key}), and HTTP body (if POST) */
+        let parameters = [ParameterKeys.SessionID: TMDBClient.sharedInstance().sessionID!]
+        let method = TMDBClient.substituteKeyInMethod(Methods.AccountIDWatchlistMovies, key: TMDBClient.URLKeys.UserID, value: String(TMDBClient.sharedInstance().userID!))!
+        
         /* 2. Make the request */
-        /* 3. Send the desired value(s) to completion handler */
-        print("implement me: TMDBClient getWatchlistMovies")
+        taskForGETMethod(method, parameters: parameters) { (result, error) -> Void in
+            /* 3. Send the desired value(s) to completion handler */
+            if let error = error {
+                print(error)
+                completionHandler(result: nil, error: error)
+            } else {
+                if let results = result[TMDBClient.JSONResponseKeys.MovieResults] as? [[String: AnyObject]] {
+                    let movies = TMDBMovie.moviesFromResults(results)
+                    completionHandler(result: movies, error: nil)
+                } else {
+                    completionHandler(result: nil, error: NSError(domain: "getWatchlistMovies parsing", code: 0, userInfo: [NSLocalizedDescriptionKey: "Could not parse getWatchlistMovies"]))
+                }
+            }
+        }
     }
     
     func getMoviesForSearchString(searchString: String, completionHandler: (result: [TMDBMovie]?, error: NSError?) -> Void) -> NSURLSessionDataTask? {
