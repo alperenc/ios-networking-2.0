@@ -111,17 +111,43 @@ extension TMDBClient {
     func getSessionID(requestToken: String?, completionHandler: (success: Bool, sessionID: String?, errorString: String?) -> Void) {
         
         /* 1. Specify parameters, method (if has {key}), and HTTP body (if POST) */
+        let parameters = [ParameterKeys.RequestToken: requestToken!]
+        
         /* 2. Make the request */
-        /* 3. Send the desired value(s) to completion handler */
-        print("implement me: TMDBClient getSessionID")
+        taskForGETMethod(Methods.AuthenticationSessionNew, parameters: parameters) { (result, error) -> Void in
+            /* 3. Send the desired value(s) to completion handler */
+            if let error = error {
+                print(error)
+                completionHandler(success: false, sessionID: nil, errorString: error.userInfo[NSLocalizedDescriptionKey] as? String)
+            } else {
+                if let sessionID = result[JSONResponseKeys.SessionID] as? String {
+                    completionHandler(success: true, sessionID: sessionID, errorString: nil)
+                } else {
+                    completionHandler(success: false, sessionID: nil, errorString: "Login Failed (Session ID).")
+                }
+            }
+        }
     }
     
     func getUserID(completionHandler: (success: Bool, userID: Int?, errorString: String?) -> Void) {
         
         /* 1. Specify parameters, method (if has {key}), and HTTP body (if POST) */
+        let parameters = [ParameterKeys.SessionID: sessionID!]
+        
         /* 2. Make the request */
-        /* 3. Send the desired value(s) to completion handler */
-        print("implement me: TMDBClient getUserID")
+        taskForGETMethod(Methods.Account, parameters: parameters) { (result, error) -> Void in
+            /* 3. Send the desired value(s) to completion handler */
+            if let error = error {
+                print(error)
+                completionHandler(success: false, userID: nil, errorString: error.userInfo[NSLocalizedDescriptionKey] as? String)
+            } else {
+                if let userID = result[JSONResponseKeys.UserID] as? Int {
+                    completionHandler(success: true, userID: userID, errorString: nil)
+                } else {
+                    completionHandler(success: false, userID: nil, errorString: "Login Failed (User ID).")
+                }
+            }
+        }
     }
     
     // TODO: Make the following methods into convenience functions!
