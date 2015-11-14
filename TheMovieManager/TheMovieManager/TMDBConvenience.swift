@@ -287,8 +287,27 @@ extension TMDBClient {
     func postToWatchlist(movie: TMDBMovie, watchlist: Bool, completionHandler: (result: Int?, error: NSError?) -> Void) {
         
         /* 1. Specify parameters, method (if has {key}), and HTTP body (if POST) */
+        let parameters = [ParameterKeys.SessionID: TMDBClient.sharedInstance().sessionID!]
+        var method = Methods.AccountIDWatchlist
+        method = TMDBClient.subtituteKeyInMethod(method, key: URLKeys.UserID, value: String(TMDBClient.sharedInstance().userID!))!
+        
+        let jsonBody: [String: AnyObject] = [
+            JSONBodyKeys.MediaType: "movie",
+            JSONBodyKeys.MediaID: movie.id as Int,
+            JSONBodyKeys.Watchlist: watchlist as Bool]
+        
         /* 2. Make the request */
-        /* 3. Send the desired value(s) to completion handler */
-        print("implement me: TMDBClient postToWatchlist")
+        taskForPOSTMethod(method, parameters: parameters, jsonBody: jsonBody) { (result, error) -> Void in
+            /* 3. Send the desired value(s) to completion handler */
+            if let error = error {
+                completionHandler(result: nil, error: error)
+            } else {
+                if let results = result[JSONResponseKeys.StatusCode] as? Int {
+                    completionHandler(result: results, error: nil)
+                } else {
+                    completionHandler(result: nil, error: NSError(domain: "postToWatchlist parsing", code: 0, userInfo: [NSLocalizedDescriptionKey: "Could not parse postToWatchlist"]))
+                }
+            }
+        }
     }
 }

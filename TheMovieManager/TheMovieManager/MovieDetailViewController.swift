@@ -150,7 +150,36 @@ class MovieDetailViewController: UIViewController {
     
     @IBAction func toggleWatchlistButtonTouchUp(sender: AnyObject) {
         
-        // TODO: Add the movie to watchlist, then update watchlist button */
-        print("implement me: MovieDetailViewController toggleWatchlistButtonTouchUp()")
+        if isWatchlist {
+            TMDBClient.sharedInstance().postToWatchlist(movie!, watchlist: false) { (statusCode, error) -> Void in
+                if let error = error {
+                    print(error)
+                } else {
+                    if statusCode == 13 {
+                        self.isWatchlist = false
+                        dispatch_async(dispatch_get_main_queue()) {
+                            self.toggleWatchlistButton.tintColor = UIColor.blackColor()
+                        }
+                    } else {
+                        print("Unexpected status code \(statusCode)")
+                    }
+                }
+            }
+        } else {
+            TMDBClient.sharedInstance().postToWatchlist(movie!, watchlist: true) { (statusCode, error) -> Void in
+                if let error = error {
+                    print(error)
+                } else {
+                    if statusCode == 1 || statusCode == 12 {
+                        self.isWatchlist = true
+                        dispatch_async(dispatch_get_main_queue()) {
+                            self.toggleWatchlistButton.tintColor = nil
+                        }
+                    } else {
+                        print("Unexpected status code \(statusCode)")
+                    }
+                }
+            }
+        }
     }
 }
